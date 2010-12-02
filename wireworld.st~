@@ -1,0 +1,8 @@
+runWireworld: filename
+   "This method runs the wireworld simulation, given a path to a wireworld file."
+   | lines, world |
+   lines := readFileLines filename
+   world := Wireworld new: lines
+   world run
+
+runWireworld: 'testworld.wire'
