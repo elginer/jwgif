@@ -1,0 +1,80 @@
+NAME
+
+   jwgif - Johnny's Wireworld GIF creator.
+
+REQUIREMENTS
+
+   gcc
+   GNU Plotutils
+   GNU Smalltalk
+
+COMPILATION
+
+   ./compile.sh
+
+USAGE
+   
+   jwgif FILENAME GENERATIONS WIDTH HEIGHT SQUARESIZE
+
+OPTIONS
+
+   FILENAME is a path to a Wireworld file - see WIREWORLD FILE FORMAT below.
+
+   The following must be positive integers:
+
+   GENERATIONS determines the number of frames produced.
+   WIDTH the width of the output GIF, in pixels.
+   HEIGHT the height of the output GIF, in pixels.
+   SQUARESIZE the size of the square cells, in pixels.
+
+WIREWORLD FILE FORMAT
+
+   Wireworld is a cellular automaton with some similarities to Conway's Game of Life. It is 
+   capable of doing sophisticated computations (e.g., calculating primeness!) with appropriate
+   programs, and is much simpler to program for.
+
+   A wireworld arena consists of a cartesian grid of cells, each of which can be in one of 
+   four states. All cell transitions happen simultaneously. The cell transition rules are this:
+
+   Input State       Output State      Condition
+   empty             empty 	
+   electron head     electron tail  	
+   electron tail     conductor 	
+   conductor         electron head     if 1 or 2 cells in the neighborhood of the cell are in the state “electron head”
+   conductor         conductor         otherwise
+
+   A Wireworld program can be stored in a file using the following notation:
+   
+   "H" for an electron head
+   "t" for a tail
+   "." for a conductor
+   space for empty.
+   
+   Here is an example program, which demonstrates two cycle-3 generators and an inhibit gate:
+
+   tH.........
+   .   .
+      ...
+   .   .
+   Ht.. ......
+
+   The output for this program is included with the jwgif distribution, with the file name 3cycle.gif
+
+   This section was ripped off from http://rosettacode.org/wiki/Wireworld on 6th December 2010.  Thanks guys!
+
+LICENSE
+
+   jwgif is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   jwgif is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with jwgif.  If not, see <http://www.gnu.org/licenses/>.
+
+

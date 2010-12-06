@@ -1,3 +1,3 @@
 #! /bin/bash
 
-gcc -L. -lwiregif tests/gif.c -o giftest
+gcc -L. -lwiregif tests/gif.c -o out/giftest
