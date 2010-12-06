@@ -2,6 +2,11 @@ NAME
 
    jwgif - Johnny's Wireworld GIF creator.
 
+ABOUT
+
+   jwgif is a simulator for the Wireworld cellular automaton.  It renders to an animated GIF,
+   which it sends to stdout.
+
 REQUIREMENTS
 
    gcc
@@ -26,6 +31,10 @@ OPTIONS
    WIDTH the width of the output GIF, in pixels.
    HEIGHT the height of the output GIF, in pixels.
    SQUARESIZE the size of the square cells, in pixels.
+
+EXAMPLE
+
+   ./jwgif arena/cyc3inhib.ww 200 110 50 10 > 3cycle.gif
 
 WIREWORLD FILE FORMAT
 
@@ -59,6 +68,13 @@ WIREWORLD FILE FORMAT
    Ht.. ......
 
    The output for this program is included with the jwgif distribution, with the file name 3cycle.gif
+
+   jwgif uses the following convention for colouring cells in the output GIF:
+
+   An electron head is red.
+   A tail is blue.
+   A conductor is green.
+   Empty cells are black.
 
    This section was ripped off from http://rosettacode.org/wiki/Wireworld on 6th December 2010.  Thanks guys!
 
