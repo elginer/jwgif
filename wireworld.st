@@ -8,11 +8,13 @@ Conductor extend [
    next: neighbours [
       "This method returns an Electron Head if 1 or 2 of the neighbours are in Electron head state."
       | heads |
-      heads := 0
+      heads := 0.
       neighbours do: [ :other |
-         (other what = #Head) ifTrue: [heads := heads + 1]
+         (other what = #Head) ifTrue: [
+            heads := heads + 1.
+         ]
       ].
-      ((heads = 1) or: (heads = 2)) 
+      ((heads = 1) or: [(heads = 2)])
       ifTrue: 
          [^ Head new]
       ifFalse:
@@ -47,7 +49,7 @@ Tail extend [
 
 ]
 
-Object subclass #Empty
+Object subclass: #Empty.
 
 Empty comment:
 'I am the empty WireWorld cell. The next state is Empty.'.
@@ -65,7 +67,7 @@ Object subclass: #Cell.
 Cell comment:
 'I am a cell in the Wireworld cellular automaton.  I use the State pattern (see Gang of Four), where I use CellState classes make me appear to change my own class.'.
 
-Cell instanceVariableNames: 'neighbours state'.
+Cell instanceVariableNames: 'neighbours state nextState'.
 
 Cell class extend [
 
@@ -74,6 +76,7 @@ Cell class extend [
       | cell |
       cell := super new.
       cell change: state.
+      cell newNeighbours.
       ^ cell
    ]
 
@@ -81,20 +84,35 @@ Cell class extend [
       "This method creates a cell in a given state, corresponding to the input character - H for electron head, t for electron tail, . for conductor and space for empty."
       | choices |
       choices := Dictionary new.
-      choices at: $. put: [Cell new: Conductor new].
-      choices at: $H put: [Cell new: Head new].
-      choices at: $t put: [Cell new: Tail new].
-      choices at: $  put: [Cell new: Empty new].
-      ^ (choices at: char) value
+      choices at: $. put: [Conductor new].
+      choices at: $H put: [Head new].
+      choices at: $t put: [Tail new].
+      choices at: $  put: [Empty new].
+      ^ Cell new: ((choices at: char) value)
    ]
 
 ]
 
 Cell extend [
 
-   step [
+   newNeighbours [
+      "This method creates a new neighbours set for this cell."
+      neighbours := Set new
+   ]
+
+   addNeighbour: other [
+      "This method adds a new neighbour to this cell."
+      neighbours add: other
+   ]
+
+   findStep [
+      "This method finds the next state for this cell."
+      nextState := state next: neighbours
+   ]
+
+   takeStep [
       "This method puts the Cell into its next state."
-      self change: state next: neighbours
+      self change: nextState
    ]
 
    change: behaviour [
@@ -104,7 +122,7 @@ Cell extend [
 
    what [
       "This method describes the state of the cell, returning either #Conductor, #Head, #Tail or #Empty."
-      state class name
+      ^ (state class) name
    ]
 
 ]
@@ -114,20 +132,18 @@ Object subclass: #WireTable.
 WireTable comment:
 'I am the current state of a Wireworld program - a tabular grid of Wireworld cells.'.
 
-WireTable instanceVariableNames: 'table lastrow lastcol'.
+WireTable instanceVariableNames: 'table width height'.
 
 WireTable class extend [
 
    new: filename [
       "This method reads the wireworld file to create the WireTable."
-      | file lns width height table |
+      | file lns table |
       file := FileStream open: filename mode: #read.
       lns := file lines contents.
       file close.
-      height := lns size.
-      width := (lns collect: [:ln | ln size]) sort last.
       table := super new.
-      table columns: width rows: height rowdata: lns.
+      table lines: lns.
       ^ table
    ]
 ]
@@ -136,17 +152,37 @@ WireTable extend [
 
    lines: lns [
       "This method parses the lines into a table"
-      lastrow := height.
-      lastcol := width.
-      table := (Array new: height) collect: [Array new: width withAll: Cell new: Empty new].
+      self setBounds: lns.
+      self createTable.
+      self createCells: lns.
+      self setNeighbours
+   ]
+
+   createCells: lns [
+      "This method populates the table, according to the lines."
       lns doWithIndex: [:ln :rownum |
          | row |
-         row := table at: rownum
+         row := table at: rownum.
          ln doWithIndex: [:ch :colnum |
             row at: colnum put: (Cell parse: ch).
          ]
+      ]
+   ]
+
+   setBounds: lns [
+      "This method sets the bounds of the table."
+      height := lns size.
+      width := (lns collect: [:ln | ln size]) sort last.
+   ]
+
+   createTable [
+      "This method creates a table populated by empty cells."
+      table := (Array new: height) collect: [:ignore |
+          | col |
+          col := Array new: width.
+          col collect: [:forget | Cell new: (Empty new)]
       ].
-      self addNeighbours
+
    ]
 
    setNeighbours [
@@ -161,23 +197,23 @@ WireTable extend [
          l := x - 1.
          "right"
          r := x + 1.
-         raw := Array new.
-         raw at: 1 put: a@l.
-         raw at: 2 put: a@x.
-         raw at: 3 put: a@r.
-         raw at: 4 put: y@l.
-         raw at: 5 put: y@r.
-         raw at: 6 put: b@l.
-         raw at: 7 put: b@x.
-         raw at: 8 put: b@r.
+         raw := Array new: 8.
+         raw at: 1 put: l@a.
+         raw at: 2 put: x@a.
+         raw at: 3 put: r@a.
+         raw at: 4 put: l@y.
+         raw at: 5 put: r@y.
+         raw at: 6 put: l@b.
+         raw at: 7 put: x@b.
+         raw at: 8 put: r@b.
          neighpts := raw reject: [:p |
             (p y < 1) or:
-            (p y > lastrow) or:
-            (p x < 1) or:
-            (p x > lastcol)
+            [(p y > height) or:
+            [(p x < 1) or:
+            [(p x > width)]]]
          ].
          neighpts do: [:pt |
-            cell addNeighbour: (table at: (pt y)) at: pt x
+            cell addNeighbour: ((table at: (pt y)) at: pt x)
          ]
       ]
    ]
@@ -185,7 +221,10 @@ WireTable extend [
    frame [
       "This method performs one execution step."
       self withCells: [:cell |
-         cell step.
+         cell findStep
+      ].
+      self withCells: [:cell |
+         cell takeStep
       ]
    ]
 
@@ -198,8 +237,8 @@ WireTable extend [
       ]
    ]
 
-   drawTo: renderer [
-      renderer cells: table collect: [:col | col collect: [:cell | cell class name]]
+   drawTo: renderer frameNo: frame [
+      renderer draw: (table collect: [:row | row collect: [:cell | cell what]]) frameNo: frame
    ]
 
 ]
@@ -224,7 +263,7 @@ WireWorld class extend [
       "This method loads the Wireworld and returns it."
       | table |
       table := WireTable new: filename.
-      ^ WireWporld new: table drawWith: renderer
+      ^ WireWorld new: table drawWith: renderer
    ]
 ]
 
@@ -238,9 +277,9 @@ WireWorld extend [
 
    run: n [
       "This method runs the wireworld simulation."
-      1 to: n do: [
-         table frame.
-         table drawTo: renderer
+      1 to: n do: [:frameNo |
+         table drawTo: renderer frameNo: frameNo.
+         table frame
       ]
    ]
 ]
